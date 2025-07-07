@@ -99,6 +99,11 @@ model Template {
   description String?
   structure   Json?
 
+  usages            TemplateUsage[]
+  totalUsage        Int             @default(0)
+  totalDrivesUsage  Int             @default(0)
+  totalFoldersUsage Int             @default(0)
+
   // Audit
   createdById String   @db.ObjectId
   createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade, name: "TemplatesCreatedByUser")
@@ -107,6 +112,27 @@ model Template {
   updatedById String?  @db.ObjectId
   updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull, name: "TemplatesModifiedByUser")
   updatedAt   DateTime @updatedAt
+}
+
+enum TemplateUsageType {
+  folders
+  drives
+}
+
+model TemplateUsage {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  usage     Int
+  usageType TemplateUsageType
+
+  templateId String   @db.ObjectId
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  usageDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([usageType, templateId, usageDate])
 }
 
 enum BatchProcessStatus {
@@ -132,6 +158,8 @@ model BatchProcess {
   startedAt   DateTime  @default(now())
   completedAt DateTime?
 
+  batchProcessLogs BatchProcessLog[]
+
   // Audit
   createdById String   @db.ObjectId
   createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade, name: "BatchProcessesCreatedByUser")
@@ -155,6 +183,10 @@ model BatchProcessLog {
   tag         BatchProcessLogTag
   description String
   status      BatchProcessLogStatus @default(executing)
+  message     String?
+
+  batchProcessId String       @db.ObjectId
+  batchProcess   BatchProcess @relation(fields: [batchProcessId], references: [id], onDelete: Cascade)
 
   startedAt   DateTime  @default(now())
   completedAt DateTime?
